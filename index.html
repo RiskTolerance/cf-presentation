@@ -91,7 +91,7 @@
 
 				<section>
 					<span class="kicker">01 · Cloudflare</span>
-					<h2>Cloudflare services in use</h2>
+					<h2>Cloudflare replaces several providers with one platform</h2>
 					<div class="ps">
 						<span class="head">Usual setup</span><span></span><span class="head">On Cloudflare</span>
 						<div class="problem">Servers or containers to provision and scale</div>
@@ -116,8 +116,8 @@
 				</section>
 
 				<section>
-					<span class="kicker">01 · Cloudflare</span>
-					<h2>Config and code are kept in sync by hand</h2>
+					<span class="kicker">01 · Cloudflare without Alchemy</span>
+					<h2>Without Alchemy, nothing checks that the config matches the code</h2>
 					<div class="grid two">
 						<div>
 							<pre><code class="language-json" data-trim>
@@ -147,6 +147,10 @@ export default {
 							<p class="caption">A misspelled binding is <code>undefined</code> at runtime.</p>
 						</div>
 					</div>
+					<p class="small" style="margin-top: 0.8em">
+						The config, the dashboard and the code each hold part of the setup, and you keep them
+						in sync by hand. Alchemy replaces all three with one TypeScript file.
+					</p>
 					<aside class="notes">
 						wrangler types can generate an Env type from this file, which helps. The config is
 						still JSON, though. It can't be composed, and nothing checks it against the resources
@@ -156,7 +160,7 @@ export default {
 
 				<section>
 					<span class="kicker">01 · Alchemy</span>
-					<h2>Alchemy: infrastructure in TypeScript</h2>
+					<h2 style="font-size: 1.25em">With Alchemy, the infrastructure file also defines the app's types</h2>
 					<div class="split">
 						<pre class="tall" style="font-size: 0.39em"><code class="language-ts" data-trim data-line-numbers="|5-7|9-16|18|20-27"><script type="text/template">
 import * as Cloudflare from '@alchemy.run/cloudflare';
@@ -195,6 +199,9 @@ export default Alchemy.Stack(
 								<li>Stages (dev, demo, prod) are separate deployments with their own settings.</li>
 								<li><code>alchemy dev</code> emulates D1, R2 and email locally.</li>
 							</ul>
+							<p style="margin-top: 0.8em">
+								<b>The misspelled <code>env.VECTOR</code> from the last slide is now a type error.</b>
+							</p>
 						</div>
 					</div>
 					<aside class="notes">
@@ -207,7 +214,7 @@ export default Alchemy.Stack(
 
 				<section>
 					<span class="kicker">01 · Effect</span>
-					<h2>What Effect adds to TypeScript</h2>
+					<h2>Effect puts errors and dependencies in the type</h2>
 					<div class="ps">
 						<span class="head">Plain TypeScript</span><span></span><span class="head">With Effect</span>
 						<div class="problem">An <code>async</code> function's type doesn't say what it can throw</div>
@@ -227,7 +234,7 @@ export default Alchemy.Stack(
 
 				<section>
 					<span class="kicker">01 · Effect</span>
-					<h2>Defining a service</h2>
+					<h2>Services keep Cloudflare bindings out of app logic</h2>
 					<pre><code class="language-ts" data-trim data-line-numbers="|1-3|5-16|18-20"><script type="text/template">
 export class SearchError extends Schema.TaggedError<SearchError>()('SearchError', {
   message: Schema.String
@@ -250,6 +257,10 @@ export class VectorIndex extends Context.Service<VectorIndex, { /* upsert, query
 const live = Layer.mergeAll(workersAiEmbedder(env.AI), vectorizeIndex(env.VECTORS));
 await Effect.runPromise(search(query).pipe(Effect.provide(live)));
 					</script></code></pre>
+					<p class="caption">
+						The search code asks for an <code>Embedder</code> and a <code>VectorIndex</code>. Production
+						passes in Workers AI and Vectorize; tests pass in fakes.
+					</p>
 					<aside class="notes">
 						The search code depends on Embedder and VectorIndex. It never touches env.AI or
 						Vectorize directly. If a required service isn't provided, the program doesn't
@@ -259,7 +270,7 @@ await Effect.runPromise(search(query).pipe(Effect.provide(live)));
 
 				<section>
 					<span class="kicker">01 · Effect Schema</span>
-					<h2>Effect Schema for form input</h2>
+					<h2>One schema gives the type and the validation</h2>
 					<pre><code class="language-ts" data-trim><script type="text/template">
 export const PostInput = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
@@ -289,8 +300,8 @@ export const writePost = form(strict(PostInput), async (input) => { /* input: Po
 
 				<section>
 					<span class="kicker">01 · Main idea</span>
-					<h2>Schemas shared across boundaries</h2>
-					<p class="small muted">At each boundary, both sides are generated from one definition.</p>
+					<h2>Both sides of each boundary come from one definition</h2>
+					<p class="small muted">So neither side can drift from the other without a build error.</p>
 					<div class="bidi">
 						<div class="side infra">
 							<b>Infrastructure</b>
@@ -340,7 +351,7 @@ export const writePost = form(strict(PostInput), async (input) => { /* input: Po
 
 				<section>
 					<span class="kicker">01 · Example</span>
-					<h2>Example: a content block definition</h2>
+					<h2>One block definition generates its validation, tables and agent tools</h2>
 					<div class="split">
 						<pre><code class="language-ts" data-trim><script type="text/template">
 export const Testimonials = defineBlock('testimonials', {
@@ -383,7 +394,7 @@ export const Testimonials = defineBlock('testimonials', {
 
 				<section>
 					<span class="kicker">02 · Strict frameworks</span>
-					<h2>The argument</h2>
+					<h2>Strict checks catch the mistakes models make</h2>
 					<p>
 						Model output varies between runs, so we can't count on it being right.
 					</p>
@@ -399,7 +410,7 @@ export const Testimonials = defineBlock('testimonials', {
 
 				<section>
 					<span class="kicker">02 · Failure modes</span>
-					<h2>Runtime failures vs. build failures</h2>
+					<h2>A strict stack moves failures from runtime to build time</h2>
 					<div class="grid two">
 						<div class="card" style="border-top: 3px solid var(--bad)">
 							<span class="label">Loose stack</span>
@@ -426,7 +437,7 @@ export const Testimonials = defineBlock('testimonials', {
 
 				<section>
 					<span class="kicker">02 · Checks</span>
-					<h2>Checks and what they catch</h2>
+					<h2>Each check catches a different kind of mistake</h2>
 					<div class="gates">
 						<div class="gate">
 							<span class="when">Types</span>
@@ -462,7 +473,7 @@ export const Testimonials = defineBlock('testimonials', {
 
 				<section>
 					<span class="kicker">02 · Example</span>
-					<h2>Example: a renamed binding</h2>
+					<h2>A renamed binding fails type checking before deploy</h2>
 					<pre><code class="language-ts" data-trim><script type="text/template">
 // alchemy.run.ts after the agent renames VECTORS
 export const Website = Cloudflare.Website.SvelteKit('Website', {
@@ -481,7 +492,7 @@ export const Website = Cloudflare.Website.SvelteKit('Website', {
 
 				<section>
 					<span class="kicker">02 · Example</span>
-					<h2>Example: a malformed model response</h2>
+					<h2>A malformed model response is rejected and sent back for a retry</h2>
 					<div class="grid two">
 						<div>
 							<pre><code class="language-json" data-trim>
@@ -514,7 +525,7 @@ export const Website = Cloudflare.Website.SvelteKit('Website', {
 
 				<section>
 					<span class="kicker">02 · Example</span>
-					<h2>Example: a missing dependency</h2>
+					<h2>A missing service is a type error</h2>
 					<pre><code class="language-ts" data-trim><script type="text/template">
 // Success type, error type, required services
 const search: (q: string) => Effect.Effect<Array<Hit>, SearchError, Embedder | VectorIndex>;
@@ -528,7 +539,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 
 				<section>
 					<span class="kicker">02 · Conventions</span>
-					<h2>Fewer ways to do each thing</h2>
+					<h2>Fewer ways to do each thing means fewer ways for an agent to get it wrong</h2>
 					<div class="grid two">
 						<ul class="small">
 							<li>All infrastructure is in <code>alchemy.run.ts</code>.</li>
@@ -550,7 +561,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 
 				<section>
 					<span class="kicker">02 · Workflow</span>
-					<h2>Working with an agent</h2>
+					<h2>With the checks in place, your review can focus on behavior</h2>
 					<div class="flow">
 						<div class="step"><b>You</b><span>Describe the feature</span></div>
 						<span class="to">→</span>
@@ -565,8 +576,8 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 						<div class="step"><b>Deploy</b><span>Same steps for every stage</span></div>
 					</div>
 					<p class="small muted" style="margin-top: 1.2em">
-						Your review can focus on what the change does. The checks cover types, conventions and
-						tested behavior.
+						The agent fixes type, lint and test failures on its own. You review what the change
+						does and approve the deploy plan.
 					</p>
 				</section>
 
@@ -580,8 +591,10 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 				</section>
 
 				<section>
+					<span class="kicker">03 · Architecture</span>
+					<h3>Every service is a typed binding on the SvelteKit Worker</h3>
 					<div class="diagram">
-						<svg viewBox="0 0 1200 600" role="img" aria-label="Architecture: the browser talks to a SvelteKit Worker on Cloudflare, which reaches D1, R2, Vectorize, Workers AI, a queue, Durable Objects, Images, Cron and Turnstile through typed bindings. Claude, OpenAI and Resend are outside Cloudflare.">
+						<svg viewBox="0 0 1200 600" style="max-height: 580px" role="img" aria-label="Architecture: the browser talks to a SvelteKit Worker on Cloudflare, which reaches D1, R2, Vectorize, Workers AI, a queue, Durable Objects, Images, Cron and Turnstile through typed bindings. Claude, OpenAI and Resend are outside Cloudflare.">
 							<defs>
 								<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 									<path d="M0,0 L10,5 L0,10 z" fill="#6b7580" />
@@ -733,7 +746,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 
 				<section>
 					<span class="kicker">03 · Architecture</span>
-					<h2>Files that connect the layers</h2>
+					<h2>The layers connect through a few typed files</h2>
 					<div class="gates">
 						<div class="gate">
 							<span class="when infra">alchemy.run.ts</span>
@@ -775,7 +788,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 
 				<section>
 					<span class="kicker">03 · Architecture</span>
-					<h2>A form submission</h2>
+					<h2>A form submission is checked at every step</h2>
 					<div class="flow">
 						<div class="step"><b>Browser</b><span>Submits the form (works without JS)</span></div>
 						<span class="to">→</span>
@@ -909,7 +922,7 @@ bun alchemy profile edit --add Cloudflare
 
 				<section>
 					<span class="kicker">04 · Step 4</span>
-					<h2>Project scripts and CLAUDE.md</h2>
+					<h2>Give the agent one command that checks its work</h2>
 					<div class="split">
 						<pre><code class="language-json" data-trim>
 {
@@ -1078,7 +1091,7 @@ export const feedback = sqliteTable('feedback', {
 
 				<section>
 					<span class="kicker">05 · Demo</span>
-					<h2>Calling Workers AI with a schema</h2>
+					<h2>The same schema defines the AI request and checks the response</h2>
 					<pre><code class="language-ts" data-trim data-line-numbers="|1|7-17|18-20"><script type="text/template">
 const json_schema = Schema.toJsonSchemaDocument(Classification, { onExcessProperty: 'error' }).schema;
 
@@ -1129,7 +1142,7 @@ export const postFeedback = form(strict(FeedbackInput), async ({ text }) => {
 
 				<section>
 					<span class="kicker">05 · Demo</span>
-					<h2>Errors to look for</h2>
+					<h2>Errors the checks should catch during the demo</h2>
 					<div class="gates">
 						<div class="gate">
 							<span class="when">Types</span>
