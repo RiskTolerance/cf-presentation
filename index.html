@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<title>Cloudflare × Alchemy × Effect</title>
+
+		<link rel="stylesheet" href="dist/reset.css" />
+		<link rel="stylesheet" href="dist/reveal.css" />
+		<!-- Swap the theme: beige, black, black-contrast, blood, dracula, league, moon,
+		     night, serif, simple, sky, solarized, white, white-contrast -->
+		<link rel="stylesheet" href="dist/theme/black.css" />
+		<!-- Code highlighting theme: monokai or zenburn -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" />
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h2>Cloudflare × Alchemy × Effect</h2>
+					<p>Your name · Oct 30, 2026</p>
+					<aside class="notes">Speaker notes go here. Press S to open the speaker view.</aside>
+				</section>
+
+				<section>
+					<h3>Agenda</h3>
+					<ul>
+						<li class="fragment">Point one</li>
+						<li class="fragment">Point two</li>
+						<li class="fragment">Point three</li>
+					</ul>
+				</section>
+
+				<!-- Escape < and > inside code as &lt; and &gt; -->
+				<section>
+					<h3>Some code</h3>
+					<pre><code class="language-ts" data-trim data-line-numbers="|2|3">
+export default {
+	async fetch(request: Request, env: Env): Promise&lt;Response&gt; {
+		return new Response("Hello from the edge");
+	},
+};
+					</code></pre>
+				</section>
+
+				<!-- Nested <section>s become a vertical stack (navigate with ↓) -->
+				<section>
+					<section><h3>Deep dive</h3><p>Press ↓</p></section>
+					<section><h3>Detail 1</h3></section>
+					<section><h3>Detail 2</h3></section>
+				</section>
+
+				<!-- Prefer writing in Markdown? -->
+				<section data-markdown>
+					<textarea data-template>
+						### Markdown slide
+
+						- Written in **Markdown**
+						- `inline code` works too
+					</textarea>
+				</section>
+
+				<section>
+					<h2>Thanks!</h2>
+				</section>
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script>
+			// Config reference: https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				slideNumber: 'c/t',
+				plugins: [RevealMarkdown, RevealHighlight, RevealNotes, RevealZoom],
+			});
+		</script>
+	</body>
+</html>
