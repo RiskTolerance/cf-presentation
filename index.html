@@ -22,27 +22,21 @@
 				<section class="center">
 					<span class="kicker">Oct 30, 2026 · Isaac Druin</span>
 					<h1>Cloudflare <span class="muted">×</span> Alchemy <span class="muted">×</span> Effect</h1>
-					<p class="muted">
-						Strong, two-way schemas from the
-						<span class="infra">infrastructure</span> to the
-						<span class="data">database</span> to the <span class="ai">AI</span>
-					</p>
+					<p class="muted">Schema-driven apps on Cloudflare</p>
 					<aside class="notes">
-						One idea runs through the whole talk: define each thing once, as a typed schema, and let
-						every other layer derive from it. Then a mistake anywhere becomes a compile error, not
-						an incident.
+						Main idea: define each thing once as a typed schema and generate the other layers from
+						it. Most mistakes then show up as compile errors before deploy.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">Today</span>
-					<h2>Where we're going</h2>
+					<h2>Agenda</h2>
 					<ol>
-						<li>The technologies, and the problems they solve</li>
-						<li>Why rigid, structured frameworks are the best place for AI to work</li>
-						<li>How the pieces are assembled</li>
-						<li>Setup: zero to deployed</li>
-						<li>Live: an agent builds and ships a small app</li>
+						<li>What each technology does</li>
+						<li>Why strict frameworks help when an AI writes the code</li>
+						<li>Architecture of a production app on this stack</li>
+						<li>Setting up a new project</li>
+						<li>Live demo: build and deploy a small app with an agent</li>
 					</ol>
 				</section>
 
@@ -51,80 +45,79 @@
 				<!-- ============================================================ -->
 				<section class="divider" data-background-color="#0f1216">
 					<span class="num">01</span>
-					<h2>The stack, and what it solves</h2>
-					<p>Four core pieces, three supporting ones</p>
+					<h2>The stack</h2>
 				</section>
 
 				<section>
 					<span class="kicker">01 · The stack</span>
-					<h2>Each piece owns one job</h2>
+					<h2>What each piece does</h2>
 					<div class="grid four">
 						<div class="card infra">
-							<span class="label">Runs it</span>
+							<span class="label">Platform</span>
 							<h4>Cloudflare</h4>
-							<p>Compute, database, storage, vectors and AI models, all on one network</p>
+							<p>Hosts Workers, the database, file storage, vector search and AI models</p>
 						</div>
 						<div class="card infra">
-							<span class="label">Declares it</span>
+							<span class="label">Infra as code</span>
 							<h4>Alchemy</h4>
-							<p>Infrastructure as TypeScript: every resource and binding is a typed value</p>
+							<p>Describes Cloudflare resources and bindings in TypeScript and deploys them</p>
 						</div>
 						<div class="card data">
-							<span class="label">Checks it</span>
+							<span class="label">Effects + schemas</span>
 							<h4>Effect</h4>
-							<p>Typed errors and dependencies, plus Schema: one definition for types and validation</p>
+							<p>Tracks errors and dependencies in types. Its Schema module handles validation.</p>
 						</div>
 						<div class="card data">
-							<span class="label">Holds it together</span>
+							<span class="label">Language</span>
 							<h4>TypeScript</h4>
-							<p>The contract every layer agrees on, enforced before anything runs</p>
+							<p>Checks that all of these agree before anything runs</p>
 						</div>
 					</div>
 					<div class="grid three">
 						<div class="card">
 							<h4>SvelteKit</h4>
-							<p>The web framework. Remote functions take a schema for every input.</p>
+							<p>Web framework. Remote functions validate their input with a schema.</p>
 						</div>
 						<div class="card">
 							<h4>Drizzle</h4>
-							<p>Database tables in TypeScript, turned into SQL migrations and typed queries</p>
+							<p>Tables defined in TypeScript. Generates SQL migrations and typed queries.</p>
 						</div>
 						<div class="card">
 							<h4>bun</h4>
-							<p>Runtime and package manager. Runs TypeScript directly, installs fast.</p>
+							<p>Runs TypeScript directly and installs packages quickly</p>
 						</div>
 					</div>
 				</section>
 
 				<section>
 					<span class="kicker">01 · Cloudflare</span>
-					<h2>One account instead of six vendors</h2>
+					<h2>Cloudflare services in use</h2>
 					<div class="ps">
-						<span class="head">Problem</span><span></span><span class="head">Cloudflare</span>
-						<div class="problem">Servers, regions and scaling to manage</div>
+						<span class="head">Usual setup</span><span></span><span class="head">On Cloudflare</span>
+						<div class="problem">Servers or containers to provision and scale</div>
 						<span class="arrow">→</span>
-						<div class="solution"><b>Workers</b> run on every edge location and scale to zero</div>
-						<div class="problem">A database host, a file host, a vector DB, an AI API…</div>
+						<div class="solution"><b>Workers</b> run near the user and scale to zero</div>
+						<div class="problem">Separate providers for database, files, vectors and models</div>
 						<span class="arrow">→</span>
 						<div class="solution">
 							<b>D1</b> (SQLite), <b>R2</b> (files), <b>Vectorize</b>, <b>Workers AI</b>
 						</div>
-						<div class="problem">Background jobs and schedules need their own servers</div>
+						<div class="problem">Separate infrastructure for background jobs and schedules</div>
 						<span class="arrow">→</span>
 						<div class="solution"><b>Queues</b>, <b>Cron Triggers</b>, <b>Durable Objects</b></div>
-						<div class="problem">Egress fees, separate bills, separate auth</div>
+						<div class="problem">Egress fees and several bills</div>
 						<span class="arrow">→</span>
-						<div class="solution">No egress on R2, one bill, generous free tier</div>
+						<div class="solution">R2 has no egress fees; one bill with a free tier</div>
 					</div>
 					<aside class="notes">
-						Every one of these is reached from a Worker through a binding: env.DB, env.AI and so on.
-						No connection strings and no API keys between your own pieces.
+						A Worker reaches each service through a binding such as env.DB or env.AI, so there are
+						no connection strings or internal API keys.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">01 · Cloudflare</span>
-					<h2>…but the glue is plain strings</h2>
+					<h2>Config and code are kept in sync by hand</h2>
 					<div class="grid two">
 						<div>
 							<pre><code class="language-json" data-trim>
@@ -138,32 +131,32 @@
   ]
 }
 							</code></pre>
-							<p class="caption">Config in JSON. The resources themselves come from the dashboard or separate commands.</p>
+							<p class="caption">Resources are created in the dashboard or with separate commands, then referenced by ID.</p>
 						</div>
 						<div>
 							<pre><code class="language-ts" data-trim>
 // Somewhere in your app
 export default {
   async fetch(request, env) {
-    // Typo? Wrong binding? Find out in production.
     const rows = await env.DB.prepare('…').all();
+    // The config says VECTORS. This compiles and fails at runtime.
     const hits = await env.VECTOR.query(vector);
   }
 };
 							</code></pre>
-							<p class="caption">Three sources of truth: the config, the dashboard, and your code.</p>
+							<p class="caption">A misspelled binding is <code>undefined</code> at runtime.</p>
 						</div>
 					</div>
 					<aside class="notes">
-						Cloudflare's tooling has improved a lot here (wrangler types generates an Env type from
-						the config), but the config is still JSON, it doesn't compose, and nothing checks it
-						against what actually exists in your account.
+						wrangler types can generate an Env type from this file, which helps. The config is
+						still JSON, though. It can't be composed, and nothing checks it against the resources
+						in your account.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">01 · Alchemy</span>
-					<h2>Infrastructure is just TypeScript</h2>
+					<h2>Alchemy: infrastructure in TypeScript</h2>
 					<div class="split">
 						<pre class="tall" style="font-size: 0.39em"><code class="language-ts" data-trim data-line-numbers="|5-7|9-16|18|20-27"><script type="text/template">
 import * as Cloudflare from '@alchemy.run/cloudflare';
@@ -196,37 +189,37 @@ export default Alchemy.Stack(
 						</script></code></pre>
 						<div class="side">
 							<ul>
-								<li>A resource is a <b>value</b>. Binding it to a Worker is what creates it.</li>
-								<li><code>InferEnv</code> turns the bindings into the app's <code>env</code> type</li>
-								<li><code>alchemy plan</code> shows the diff before anything changes</li>
-								<li><b>Stages</b> (dev, demo, prod) are separate copies, each with its own settings</li>
-								<li><code>alchemy dev</code> emulates D1, R2 and email locally</li>
+								<li>Each resource is a value. Alchemy creates it when something binds to it.</li>
+								<li><code>InferEnv</code> derives the app's <code>env</code> type from the bindings.</li>
+								<li><code>alchemy plan</code> prints the changes before applying them.</li>
+								<li>Stages (dev, demo, prod) are separate deployments with their own settings.</li>
+								<li><code>alchemy dev</code> emulates D1, R2 and email locally.</li>
 							</ul>
 						</div>
 					</div>
 					<aside class="notes">
-						Alchemy v2 is built on Effect: the stack is an Effect program, and resources are
-						yielded. Step through the highlights: resources, the Website and its bindings, the
-						inferred type, and the stack. The state (what Alchemy has made) lives in your
-						Cloudflare account, so anyone with access can deploy the next change.
+						Alchemy v2 is built on Effect. The stack is an Effect program, and resources are
+						yielded from it. Step through the highlighted lines in order: resources, the Website
+						with its bindings, the inferred type, the stack. Alchemy stores its state in the
+						Cloudflare account, so anyone else with access can deploy.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">01 · Effect</span>
-					<h2>Making the hidden parts of a function visible</h2>
+					<h2>What Effect adds to TypeScript</h2>
 					<div class="ps">
-						<span class="head">Plain TypeScript</span><span></span><span class="head">Effect</span>
-						<div class="problem"><code>async</code> functions can throw anything, and the type doesn't say what</div>
+						<span class="head">Plain TypeScript</span><span></span><span class="head">With Effect</span>
+						<div class="problem">An <code>async</code> function's type doesn't say what it can throw</div>
 						<span class="arrow">→</span>
-						<div class="solution"><code>Effect&lt;Success, Error, Requirements&gt;</code>: failures are in the type</div>
-						<div class="problem">Validation (zod, hand checks) drifts from the interfaces</div>
+						<div class="solution"><code>Effect&lt;Success, Error, Requirements&gt;</code> includes the error type</div>
+						<div class="problem">Validation code drifts away from the interfaces it checks</div>
 						<span class="arrow">→</span>
-						<div class="solution"><b>Schema</b> is the type <em>and</em> the validator <em>and</em> the JSON Schema</div>
-						<div class="problem">Dependencies are imported globals: hard to swap, hard to test</div>
+						<div class="solution">A <b>Schema</b> gives you the static type and the runtime check from one definition</div>
+						<div class="problem">Dependencies are imported directly, so tests can't swap them</div>
 						<span class="arrow">→</span>
-						<div class="solution"><b>Services + Layers</b>: Workers AI in prod, a fake in tests</div>
-						<div class="problem">Secrets end up in logs</div>
+						<div class="solution"><b>Services</b> are provided through <b>Layers</b>, so tests can use fakes</div>
+						<div class="problem">Secrets can end up in logs</div>
 						<span class="arrow">→</span>
 						<div class="solution"><code>Config.Redacted</code> prints as <code>&lt;redacted&gt;</code></div>
 					</div>
@@ -234,7 +227,7 @@ export default Alchemy.Stack(
 
 				<section>
 					<span class="kicker">01 · Effect</span>
-					<h2>A service: the contract, not the vendor</h2>
+					<h2>Defining a service</h2>
 					<pre><code class="language-ts" data-trim data-line-numbers="|1-3|5-16|18-20"><script type="text/template">
 export class SearchError extends Schema.TaggedError<SearchError>()('SearchError', {
   message: Schema.String
@@ -248,25 +241,25 @@ export class Embedder extends Context.Service<
   }
 >()('search/Embedder') {}
 
-/** Keeps vectors and finds the nearest. Vectorize in production. */
+/** Stores vectors and finds the nearest ones. Vectorize in production. */
 export class VectorIndex extends Context.Service<VectorIndex, { /* upsert, query, remove */ }>()(
   'search/VectorIndex'
 ) {}
 
-// The binding becomes the service, once, at the edge of the app:
+// Build the real implementations from the bindings and provide them
 const live = Layer.mergeAll(workersAiEmbedder(env.AI), vectorizeIndex(env.VECTORS));
 await Effect.runPromise(search(query).pipe(Effect.provide(live)));
 					</script></code></pre>
 					<aside class="notes">
-						The search code never sees env.AI or Vectorize. It asks for an Embedder and a
-						VectorIndex, and the type says so. Forget to provide one and it doesn't compile. Tests
-						provide in-memory versions.
+						The search code depends on Embedder and VectorIndex. It never touches env.AI or
+						Vectorize directly. If a required service isn't provided, the program doesn't
+						type-check. Tests provide in-memory versions.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">01 · Effect Schema</span>
-					<h2>One definition: the type, the rules, the messages</h2>
+					<h2>Effect Schema for form input</h2>
 					<pre><code class="language-ts" data-trim><script type="text/template">
 export const PostInput = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
@@ -280,24 +273,24 @@ export const PostInput = Schema.Struct({
 });
 export type PostInput = typeof PostInput.Type;
 
-/** Every issue reported, and keys nobody asked for refused. */
+/** Report every issue, and reject keys the schema doesn't define. */
 export const STRICT = { errors: 'all', onExcessProperty: 'error' } as const;
 export const strict = <S extends Schema.ConstraintDecoder<unknown>>(schema: S) =>
   Schema.toStandardSchemaV1(schema, { parseOptions: STRICT });
 
-// SvelteKit takes it as-is: the same rules check the form, the server and the type.
+// SvelteKit accepts Standard Schema, so the form is validated with the same rules
 export const writePost = form(strict(PostInput), async (input) => { /* input: PostInput */ });
 					</script></code></pre>
 					<aside class="notes">
-						The messages are written for a person and, as we'll see, for a model. "Keep the title
-						under 140 characters" is something both can act on.
+						The messages are written so that a person filling in the form, or a model calling a
+						tool, can tell what to change.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">01 · The core idea</span>
-					<h2>Bidirectional schemas</h2>
-					<p class="small muted">Each boundary has one definition, and both sides are derived from it</p>
+					<span class="kicker">01 · Main idea</span>
+					<h2>Schemas shared across boundaries</h2>
+					<p class="small muted">At each boundary, both sides are generated from one definition.</p>
 					<div class="bidi">
 						<div class="side infra">
 							<b>Infrastructure</b>
@@ -306,48 +299,48 @@ export const writePost = form(strict(PostInput), async (input) => { /* input: Po
 						<div class="both infra">⇄</div>
 						<div class="side infra">
 							<b>App code</b>
-							<small><code>InferEnv</code> types <code>platform.env</code>; Worker classes type their bindings</small>
+							<small><code>InferEnv</code> types <code>platform.env</code>; Worker classes type their own bindings</small>
 						</div>
 
 						<div class="side data">
 							<b>Drizzle tables</b>
-							<small>TypeScript columns, constraints, indexes</small>
+							<small>Columns, constraints and indexes in TypeScript</small>
 						</div>
 						<div class="both data">⇄</div>
 						<div class="side data">
 							<b>Database</b>
-							<small>SQL migrations out; typed rows back from every query</small>
+							<small>Migrations generated from the tables; queries return typed rows</small>
 						</div>
 
 						<div class="side ai">
 							<b>Effect Schema</b>
-							<small>JSON Schema out, for tools and structured output</small>
+							<small>Converted to JSON Schema for tools and structured output</small>
 						</div>
 						<div class="both ai">⇄</div>
 						<div class="side ai">
-							<b>The model</b>
-							<small>Its JSON decoded strictly: a typed value, or a list of fixes</small>
+							<b>Model</b>
+							<small>Responses are decoded; failures come back as a list of problems</small>
 						</div>
 
 						<div class="side">
 							<b>Effect Schema</b>
-							<small>Standard Schema out, for forms</small>
+							<small>Converted to Standard Schema for forms</small>
 						</div>
 						<div class="both">⇄</div>
 						<div class="side">
 							<b>People</b>
-							<small>Field-by-field issues back, with the same rules on the server</small>
+							<small>Errors are shown per field; the server applies the same rules</small>
 						</div>
 					</div>
 					<aside class="notes">
-						This is the slide to remember. Each arrow both ways is generated, not hand-kept. When
-						one side changes, the other side either follows automatically or fails to compile.
+						Neither side of these pairs is maintained by hand. When one side changes, the other is
+						regenerated or the build fails.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">01 · The payoff</span>
-					<h2>Define it once, get three things</h2>
+					<span class="kicker">01 · Example</span>
+					<h2>Example: a content block definition</h2>
 					<div class="split">
 						<pre><code class="language-ts" data-trim><script type="text/template">
 export const Testimonials = defineBlock('testimonials', {
@@ -368,70 +361,72 @@ export const Testimonials = defineBlock('testimonials', {
 });
 						</script></code></pre>
 						<div class="side">
-							<p><b class="data">An Effect Schema</b><br /><span class="muted">validates every write, by person or agent</span></p>
-							<p><b class="data">Drizzle tables</b><br /><span class="muted"><code>block_testimonials</code>, plus its migration</span></p>
-							<p><b class="ai">Agent tools</b><br /><span class="muted"><code>add_testimonials</code> and <code>update_testimonials</code>, with the exact fields, limits and descriptions</span></p>
+							<p class="muted">Generated from this definition:</p>
+							<p><b class="data">Effect Schema</b><br /><span class="muted">validates writes from editors and from the agent</span></p>
+							<p><b class="data">Drizzle tables</b><br /><span class="muted"><code>block_testimonials</code> and its migration</span></p>
+							<p><b class="ai">Agent tools</b><br /><span class="muted"><code>add_testimonials</code> and <code>update_testimonials</code>, with the field limits and descriptions</span></p>
 						</div>
 					</div>
 					<aside class="notes">
-						A content block, defined once. Each field knows its Effect Schema and its Drizzle
-						column. The agent's tools are generated from the registry, so the model sees exactly
-						what the database will accept: the descriptions are its documentation.
+						Each field type knows its Effect Schema and its Drizzle column. The agent's tools are
+						generated from the block registry, and the field descriptions are what the model reads.
 					</aside>
 				</section>
 
 				<!-- ============================================================ -->
-				<!-- 02 · Why rigid wins for AI                                    -->
+				<!-- 02 · Why strict frameworks help AI                            -->
 				<!-- ============================================================ -->
 				<section class="divider" data-background-color="#0f1216">
 					<span class="num">02</span>
-					<h2>Why rigid frameworks are the best place for AI to work</h2>
-					<p>Failures you can see guard against output you can't predict</p>
+					<h2>Why strict frameworks help AI-written code</h2>
 				</section>
 
-				<section class="center">
-					<p class="statement">
-						Models are non-deterministic.<br />
-						Compilers aren't.
+				<section>
+					<span class="kicker">02 · Strict frameworks</span>
+					<h2>The argument</h2>
+					<p>
+						Model output varies between runs, so we can't count on it being right.
 					</p>
-					<p class="muted">So put the compiler between the model and production.</p>
+					<p>
+						The type checker, schema decoding and tests give the same answer every time. If they
+						reject wrong output before it ships, the agent can fix its own mistakes.
+					</p>
 					<aside class="notes">
-						You can't make an LLM deterministic. You can make everything around it deterministic,
-						so each wrong guess fails the same way, immediately, with a precise message.
+						We can't make an LLM deterministic. We can make the checks around it deterministic, so
+						a wrong guess fails in a predictable place with a precise message.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">02 · Mechanical failure</span>
-					<h2>Two ways to be wrong</h2>
+					<span class="kicker">02 · Failure modes</span>
+					<h2>Runtime failures vs. build failures</h2>
 					<div class="grid two">
 						<div class="card" style="border-top: 3px solid var(--bad)">
-							<span class="label">Silent failure</span>
-							<h4>Loose stack</h4>
-							<p><code>env.VECTOR</code> is <code>undefined</code> at runtime</p>
-							<p>The model's JSON has <code>"tags": "cat"</code>, and it gets saved anyway</p>
-							<p>A thrown error nobody knew about takes down a request</p>
-							<p><b class="bad">Found by users, in production, days later</b></p>
+							<span class="label">Loose stack</span>
+							<h4>Found at runtime</h4>
+							<p><code>env.VECTOR</code> is <code>undefined</code></p>
+							<p>The model returns <code>"tags": "cat"</code> as a string and it gets saved</p>
+							<p>An undeclared error stops a request</p>
+							<p><b class="bad">Usually noticed by users after release</b></p>
 						</div>
 						<div class="card" style="border-top: 3px solid var(--good)">
-							<span class="label">Mechanical failure</span>
-							<h4>Rigid stack</h4>
-							<p>Type error at <code>search.ts:42</code>: no <code>VECTOR</code> on <code>WebsiteEnv</code></p>
-							<p>Decode refused: <code>tags</code> must be an array. Sent back to the model.</p>
-							<p>The error is in the signature; unhandled, it doesn't compile</p>
-							<p><b class="good">Found by the agent, in seconds, before anyone sees it</b></p>
+							<span class="label">Strict stack</span>
+							<h4>Found before deploy</h4>
+							<p>Type error at <code>search.ts:42</code>: <code>VECTOR</code> isn't on <code>WebsiteEnv</code></p>
+							<p>Decoding fails because <code>tags</code> must be an array. The error goes back to the model.</p>
+							<p>Unhandled error types fail type checking</p>
+							<p><b class="good">Usually fixed by the agent before anyone sees it</b></p>
 						</div>
 					</div>
 					<aside class="notes">
-						A mechanical failure is loud, immediate, located and explained. That's exactly the kind
-						of feedback an agent is good at acting on. It reads the error, fixes the line, runs the
-						check again.
+						A build failure points to a file and line and says what's wrong. Agents handle this kind
+						of feedback well. They read the error, change the line and run the check again.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">02 · The gates</span>
-					<h2>Every layer catches a different kind of wrong</h2>
+					<span class="kicker">02 · Checks</span>
+					<h2>Checks and what they catch</h2>
 					<div class="gates">
 						<div class="gate">
 							<span class="when">Types</span>
@@ -440,36 +435,36 @@ export const Testimonials = defineBlock('testimonials', {
 						</div>
 						<div class="gate">
 							<span class="when">Lint</span>
-							<span class="what">Conventions: design tokens only, the component kit only, no raw colors</span>
+							<span class="what">Project conventions such as design tokens, the component kit, no raw colors</span>
 							<span class="tool">bun run lint</span>
 						</div>
 						<div class="gate">
 							<span class="when">Tests</span>
-							<span class="what">Behavior, on in-memory SQLite built from the real migrations</span>
+							<span class="what">Behavior, using in-memory SQLite built from the real migrations</span>
 							<span class="tool">bun run test</span>
 						</div>
 						<div class="gate">
 							<span class="when">Requests</span>
-							<span class="what">Bad input from people <em>and</em> models, refused with a list of fixes</span>
+							<span class="what">Invalid input from people or models, rejected with a list of problems</span>
 							<span class="tool">strict(schema)</span>
 						</div>
 						<div class="gate">
 							<span class="when">Deploys</span>
-							<span class="what">A diff of what will be created, changed or deleted, before anything is</span>
+							<span class="what">Resources to be created, changed or deleted, listed before any change</span>
 							<span class="tool">alchemy plan</span>
 						</div>
 					</div>
 					<aside class="notes">
-						The first three are folded into one command, bun run verify, and the agent is told to
-						run it until it's clean. The last two run whether or not anyone remembers.
+						The first three run together as bun run verify, and the agent is told to run it until
+						it passes. The last two run on every request and every deploy.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">02 · Example</span>
-					<h2>The agent renames a binding</h2>
+					<h2>Example: a renamed binding</h2>
 					<pre><code class="language-ts" data-trim><script type="text/template">
-// alchemy.run.ts — the agent "tidies up" a name
+// alchemy.run.ts after the agent renames VECTORS
 export const Website = Cloudflare.Website.SvelteKit('Website', {
   env: { DB, VECTOR_INDEX: Vectors, AI: Cloudflare.Workers.AI() }
 });
@@ -481,12 +476,12 @@ export const Website = Cloudflare.Website.SvelteKit('Website', {
   Property 'VECTORS' does not exist on type 'WebsiteEnv'. Did you mean 'VECTOR_INDEX'?
 
 <span class="dim">svelte-check found 2 errors</span></div>
-					<p class="caption">Illustrative output. With a JSON config, both lines would have deployed and returned <code>undefined</code>.</p>
+					<p class="caption">Illustrative output. With a JSON config, both lines would deploy and <code>env.VECTORS</code> would be <code>undefined</code>.</p>
 				</section>
 
 				<section>
 					<span class="kicker">02 · Example</span>
-					<h2>The model returns the wrong shape</h2>
+					<h2>Example: a malformed model response</h2>
 					<div class="grid two">
 						<div>
 							<pre><code class="language-json" data-trim>
@@ -497,82 +492,81 @@ export const Website = Cloudflare.Website.SvelteKit('Website', {
   "mood": "cozy"
 }
 							</code></pre>
-							<p class="caption">What came back from the model</p>
+							<p class="caption">Model response</p>
 						</div>
 						<div>
-							<div class="term" style="margin-top: 0.5em"><span class="err">✗</span> decode refused (errors: 'all')
+							<div class="term" style="margin-top: 0.5em"><span class="err">✗</span> decoding failed (errors: 'all')
   ["tags"]  Expected an array, got "cat, kitten"
   ["mood"]  Unexpected key
   ["description"]  Missing key
 
-<span class="dim">→ returned to the model as the tool result</span>
-<span class="ok">✓</span> second try decodes; saved</div>
-							<p class="caption">Illustrative. Every issue at once, so one retry fixes all of them.</p>
+<span class="dim">→ sent back to the model as the tool result</span>
+<span class="ok">✓</span> second attempt decodes and is saved</div>
+							<p class="caption">Illustrative. All errors are reported together, so one retry can fix them.</p>
 						</div>
 					</div>
 					<aside class="notes">
-						The schema goes out as JSON Schema, and what comes back is decoded, never trusted. With
-						errors: 'all' the model gets the full list, not just the first problem. Errors are
-						tagged classes whose messages are written for the agent to read.
+						The schema is sent to the model as JSON Schema, and the response is decoded against it.
+						With errors: 'all', the model gets every problem at once. The error classes have
+						messages written for the model to read.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">02 · Example</span>
-					<h2>It can't forget what might fail</h2>
+					<h2>Example: a missing dependency</h2>
 					<pre><code class="language-ts" data-trim><script type="text/template">
-// The signature says it all: what it returns, how it fails, what it needs.
+// Success type, error type, required services
 const search: (q: string) => Effect.Effect<Array<Hit>, SearchError, Embedder | VectorIndex>;
 
-// The agent wires a new route and forgets the index:
+// A new route that provides the embedder but not the index
 Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 //                ^ Type 'VectorIndex' is not assignable to type 'never'.
 					</script></code></pre>
-					<p class="small muted" style="margin-top: 0.8em">
-						Missing dependencies and unhandled errors are type errors, not 3 a.m. pages.
-					</p>
+					<p class="caption">Missing services and unhandled errors are type errors.</p>
 				</section>
 
 				<section>
-					<span class="kicker">02 · Narrow the vocabulary</span>
-					<h2>Fewer ways to do a thing, less variance</h2>
+					<span class="kicker">02 · Conventions</span>
+					<h2>Fewer ways to do each thing</h2>
 					<div class="grid two">
 						<ul class="small">
-							<li>Infrastructure lives in <b>one file</b></li>
-							<li>Writes are <b>one shape</b>: a remote function with a strict schema</li>
-							<li>Tables come from <b>one source</b>; migrations are generated, never hand-edited</li>
-							<li>UI uses <b>one kit</b>; lint refuses hand-built widgets and raw colors</li>
-							<li>Conventions in <code>CLAUDE.md</code>, <b>enforced by lint</b>, not by hope</li>
+							<li>All infrastructure is in <code>alchemy.run.ts</code>.</li>
+							<li>Every write goes through a remote function with a strict schema.</li>
+							<li>Migrations are generated from the tables and never edited by hand.</li>
+							<li>UI uses the component kit. Lint rejects hand-built widgets and raw colors.</li>
+							<li>Conventions are written in <code>CLAUDE.md</code> and enforced by lint where possible.</li>
 						</ul>
 						<div class="center" style="align-self: center">
 							<p class="statement" style="font-size: 1em">"A color that isn't a token doesn't exist."</p>
-							<p class="tiny muted">From the design-lint rules</p>
+							<p class="tiny muted">From the project's lint rules</p>
 						</div>
 					</div>
 					<aside class="notes">
-						Every convention an agent could get wrong either has a lint rule or a type behind it.
-						Prose instructions are suggestions; a failing check is a fact.
+						Where a convention matters, back it with a lint rule or a type. Agents follow written
+						instructions inconsistently, but they always see a failing check.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">02 · The loop</span>
-					<h2>You review intent. The machine reviews mechanics.</h2>
+					<span class="kicker">02 · Workflow</span>
+					<h2>Working with an agent</h2>
 					<div class="flow">
-						<div class="step"><b>You</b><span>Describe what you want</span></div>
+						<div class="step"><b>You</b><span>Describe the feature</span></div>
 						<span class="to">→</span>
-						<div class="step"><b>Agent</b><span>Writes schema first, then code</span></div>
+						<div class="step"><b>Agent</b><span>Writes schemas first, then code</span></div>
 						<span class="to">→</span>
 						<div class="step" style="border-color: var(--data)"><b class="data">bun run verify</b><span>Types, lint, tests</span></div>
 						<span class="to">→</span>
-						<div class="step"><b>Agent</b><span>Reads exact errors, fixes, repeats</span></div>
+						<div class="step"><b>Agent</b><span>Fixes the reported errors and reruns</span></div>
 						<span class="to">→</span>
-						<div class="step" style="border-color: var(--infra)"><b class="infra">alchemy plan</b><span>You approve the diff</span></div>
+						<div class="step" style="border-color: var(--infra)"><b class="infra">alchemy plan</b><span>You review the changes</span></div>
 						<span class="to">→</span>
-						<div class="step"><b>Deploy</b><span>Same program, every stage</span></div>
+						<div class="step"><b>Deploy</b><span>Same steps for every stage</span></div>
 					</div>
-					<p class="center statement" style="font-size: 1.1em; margin-top: 1.4em">
-						Let the model be creative. Let the compiler be strict.
+					<p class="small muted" style="margin-top: 1.2em">
+						Your review can focus on what the change does. The checks cover types, conventions and
+						tested behavior.
 					</p>
 				</section>
 
@@ -581,13 +575,13 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 				<!-- ============================================================ -->
 				<section class="divider" data-background-color="#0f1216">
 					<span class="num">03</span>
-					<h2>How it's assembled</h2>
-					<p>SvelteKit for the web, Cloudflare for everything else</p>
+					<h2>Architecture</h2>
+					<p>SvelteKit runs in a Worker. Everything else is a Cloudflare binding.</p>
 				</section>
 
 				<section>
 					<div class="diagram">
-						<svg viewBox="0 0 1200 600" role="img" aria-label="Architecture: the browser talks to a SvelteKit Worker on Cloudflare, which reaches D1, R2, Vectorize, Workers AI, a queue, Durable Objects, Images, Cron and Turnstile through typed bindings; Claude, OpenAI and Resend sit outside.">
+						<svg viewBox="0 0 1200 600" role="img" aria-label="Architecture: the browser talks to a SvelteKit Worker on Cloudflare, which reaches D1, R2, Vectorize, Workers AI, a queue, Durable Objects, Images, Cron and Turnstile through typed bindings. Claude, OpenAI and Resend are outside Cloudflare.">
 							<defs>
 								<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 									<path d="M0,0 L10,5 L0,10 z" fill="#6b7580" />
@@ -596,14 +590,13 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 
 							<!-- Browser -->
 							<rect x="8" y="228" width="168" height="116" rx="12" fill="#14181d" stroke="#2a313a" />
-							<text x="92" y="270" fill="#fff" font-size="20" font-weight="700" text-anchor="middle">Browser</text>
-							<text x="92" y="295" fill="#9aa3ad" font-size="14" text-anchor="middle">visitors · editors</text>
-							<text x="92" y="315" fill="#9aa3ad" font-size="14" text-anchor="middle">pages, forms, chat</text>
+							<text x="92" y="275" fill="#fff" font-size="20" font-weight="700" text-anchor="middle">Browser</text>
+							<text x="92" y="300" fill="#9aa3ad" font-size="14" text-anchor="middle">visitors and editors</text>
 							<line x1="176" y1="286" x2="238" y2="286" stroke="#6b7580" stroke-width="2" marker-end="url(#arrow)" />
 
 							<!-- Cloudflare region -->
 							<rect x="200" y="20" width="840" height="572" rx="18" fill="none" stroke="#f38020" stroke-width="1.5" stroke-dasharray="7 6" />
-							<text x="222" y="50" fill="#f38020" font-size="18" font-weight="700">Cloudflare<tspan fill="#9aa3ad" font-size="14" font-weight="400"> · every box inside is declared in alchemy.run.ts</tspan></text>
+							<text x="222" y="50" fill="#f38020" font-size="18" font-weight="700">Cloudflare<tspan fill="#9aa3ad" font-size="14" font-weight="400"> · resources declared in alchemy.run.ts</tspan></text>
 
 							<!-- Website Worker -->
 							<rect x="240" y="70" width="330" height="502" rx="14" fill="#14181d" stroke="#f38020" stroke-width="2" />
@@ -618,16 +611,16 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 								<rect x="258" y="202" width="294" height="52" rx="10" fill="#1b2027" stroke="#2a313a" />
 								<rect x="258" y="202" width="4" height="52" fill="#2dd4bf" />
 								<text x="274" y="224" fill="#fff" font-weight="600">strict(Effect Schema)</text>
-								<text x="274" y="243" fill="#9aa3ad" font-size="12.5">every input decoded, unknown keys refused</text>
+								<text x="274" y="243" fill="#9aa3ad" font-size="12.5">decodes every input, rejects unknown keys</text>
 
 								<rect x="258" y="262" width="294" height="52" rx="10" fill="#1b2027" stroke="#2a313a" />
 								<text x="274" y="284" fill="#fff" font-weight="600">Effect services + Layers</text>
-								<text x="274" y="303" fill="#9aa3ad" font-size="12.5">typed errors · real in prod, fakes in tests</text>
+								<text x="274" y="303" fill="#9aa3ad" font-size="12.5">typed errors; fakes in tests</text>
 
 								<rect x="258" y="322" width="294" height="52" rx="10" fill="#1b2027" stroke="#2a313a" />
 								<rect x="258" y="322" width="4" height="52" fill="#2dd4bf" />
 								<text x="274" y="344" fill="#fff" font-weight="600">Drizzle ORM</text>
-								<text x="274" y="363" fill="#9aa3ad" font-size="12.5">typed queries; migrations from the tables</text>
+								<text x="274" y="363" fill="#9aa3ad" font-size="12.5">typed queries, generated migrations</text>
 
 								<rect x="258" y="382" width="294" height="52" rx="10" fill="#1b2027" stroke="#2a313a" />
 								<text x="274" y="404" fill="#fff" font-weight="600">Better Auth</text>
@@ -641,7 +634,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 								<rect x="258" y="502" width="294" height="52" rx="10" fill="#1b2027" stroke="#2a313a" />
 								<rect x="258" y="502" width="4" height="52" fill="#f38020" />
 								<text x="274" y="524" fill="#fff" font-weight="600">platform.env: InferEnv&lt;Website&gt;</text>
-								<text x="274" y="543" fill="#9aa3ad" font-size="12.5">bindings typed from the infra file</text>
+								<text x="274" y="543" fill="#9aa3ad" font-size="12.5">binding types from alchemy.run.ts</text>
 							</g>
 
 							<!-- Binding bus -->
@@ -655,14 +648,14 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 								<rect x="636" y="75" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="75" width="4" height="44" fill="#2dd4bf" />
 								<text x="652" y="94" fill="#fff" font-weight="600">D1 · SQLite</text>
-								<text x="652" y="111" fill="#9aa3ad" font-size="12.5">tables + migrations from Drizzle</text>
+								<text x="652" y="111" fill="#9aa3ad" font-size="12.5">tables and migrations from Drizzle</text>
 								<text x="1002" y="102" fill="#2dd4bf" font-size="12.5" font-family="Menlo, monospace" text-anchor="end">env.DB</text>
 								<!-- 2 -->
 								<line x1="604" y1="153" x2="636" y2="153" stroke="#3a434e" stroke-width="2" />
 								<rect x="636" y="131" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="131" width="4" height="44" fill="#f38020" />
 								<text x="652" y="150" fill="#fff" font-weight="600">R2 · object storage</text>
-								<text x="652" y="167" fill="#9aa3ad" font-size="12.5">uploads, originals, sized copies</text>
+								<text x="652" y="167" fill="#9aa3ad" font-size="12.5">uploaded files and resized copies</text>
 								<text x="1002" y="158" fill="#f38020" font-size="12.5" font-family="Menlo, monospace" text-anchor="end">env.MEDIA</text>
 								<!-- 3 -->
 								<line x1="604" y1="209" x2="636" y2="209" stroke="#3a434e" stroke-width="2" />
@@ -676,7 +669,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 								<rect x="636" y="243" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="243" width="4" height="44" fill="#a78bfa" />
 								<text x="652" y="262" fill="#fff" font-weight="600">Workers AI</text>
-								<text x="652" y="279" fill="#9aa3ad" font-size="12.5">embedding models + LLMs at the edge</text>
+								<text x="652" y="279" fill="#9aa3ad" font-size="12.5">embedding and text models</text>
 								<text x="1002" y="270" fill="#a78bfa" font-size="12.5" font-family="Menlo, monospace" text-anchor="end">env.AI</text>
 								<!-- 5 -->
 								<line x1="604" y1="321" x2="636" y2="321" stroke="#3a434e" stroke-width="2" />
@@ -690,28 +683,28 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 								<rect x="636" y="355" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="355" width="4" height="44" fill="#2dd4bf" />
 								<text x="652" y="374" fill="#fff" font-weight="600">Durable Object · Drafts Worker</text>
-								<text x="652" y="391" fill="#9aa3ad" font-size="12.5">a SQLite copy of the content per draft</text>
+								<text x="652" y="391" fill="#9aa3ad" font-size="12.5">SQLite storage per draft</text>
 								<text x="1002" y="382" fill="#2dd4bf" font-size="12.5" font-family="Menlo, monospace" text-anchor="end">env.DRAFTS</text>
 								<!-- 7 -->
 								<line x1="604" y1="433" x2="636" y2="433" stroke="#3a434e" stroke-width="2" />
 								<rect x="636" y="411" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="411" width="4" height="44" fill="#f38020" />
 								<text x="652" y="430" fill="#fff" font-weight="600">Images · Imager Worker</text>
-								<text x="652" y="447" fill="#9aa3ad" font-size="12.5">resize and crop around a focus</text>
+								<text x="652" y="447" fill="#9aa3ad" font-size="12.5">resizes and crops images</text>
 								<text x="1002" y="438" fill="#f38020" font-size="12.5" font-family="Menlo, monospace" text-anchor="end">env.IMAGER</text>
 								<!-- 8 -->
 								<line x1="604" y1="489" x2="636" y2="489" stroke="#3a434e" stroke-width="2" />
 								<rect x="636" y="467" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="467" width="4" height="44" fill="#f38020" />
 								<text x="652" y="486" fill="#fff" font-weight="600">Cron · Scheduler Worker</text>
-								<text x="652" y="503" fill="#9aa3ad" font-size="12.5">every minute: publish what's due</text>
+								<text x="652" y="503" fill="#9aa3ad" font-size="12.5">runs scheduled publishes each minute</text>
 								<text x="1002" y="494" fill="#f38020" font-size="12.5" font-family="Menlo, monospace" text-anchor="end">→ Website</text>
 								<!-- 9 -->
 								<line x1="604" y1="545" x2="636" y2="545" stroke="#3a434e" stroke-width="2" />
 								<rect x="636" y="523" width="380" height="44" rx="10" fill="#14181d" stroke="#2a313a" />
 								<rect x="636" y="523" width="4" height="44" fill="#f38020" />
 								<text x="652" y="542" fill="#fff" font-weight="600">Turnstile · edge cache</text>
-								<text x="652" y="559" fill="#9aa3ad" font-size="12.5">bot checks on forms; cached pages</text>
+								<text x="652" y="559" fill="#9aa3ad" font-size="12.5">form bot checks, page caching</text>
 							</g>
 
 							<!-- Outside Cloudflare -->
@@ -721,7 +714,7 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 							<text x="1131" y="174" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">Claude</text>
 							<text x="1131" y="194" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">OpenAI</text>
 							<text x="1131" y="216" fill="#9aa3ad" font-size="12" text-anchor="middle">editor agent,</text>
-							<text x="1131" y="232" fill="#9aa3ad" font-size="12" text-anchor="middle">describing uploads</text>
+							<text x="1131" y="232" fill="#9aa3ad" font-size="12" text-anchor="middle">upload descriptions</text>
 
 							<line x1="1040" y1="440" x2="1068" y2="440" stroke="#6b7580" stroke-width="2" marker-end="url(#arrow)" />
 							<rect x="1068" y="400" width="126" height="84" rx="12" fill="#14181d" stroke="#2a313a" />
@@ -731,74 +724,73 @@ Effect.runPromise(search(q).pipe(Effect.provide(workersAiEmbedder(env.AI))));
 						</svg>
 					</div>
 					<aside class="notes">
-						Left to right: the browser only ever talks to one Worker, the SvelteKit app. Everything
-						it reaches is a binding, and every binding is declared in alchemy.run.ts and typed into
-						platform.env. The extra Workers exist because SvelteKit's generated Worker can't take
-						queue messages, run on a cron, or export a Durable Object class. Outside Cloudflare:
-						the model APIs for the agent, and Resend for email.
+						The browser only talks to the SvelteKit Worker. Each service it uses is a binding
+						declared in alchemy.run.ts and typed into platform.env. The extra Workers exist because
+						SvelteKit's generated Worker can't consume queue messages, run on a cron, or export a
+						Durable Object class. The model APIs and Resend are outside Cloudflare.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">03 · The glue</span>
-					<h2>Where the pieces meet</h2>
+					<span class="kicker">03 · Architecture</span>
+					<h2>Files that connect the layers</h2>
 					<div class="gates">
 						<div class="gate">
 							<span class="when infra">alchemy.run.ts</span>
-							<span class="what">Every resource and binding, the stages, the secrets. Exports <code>WebsiteEnv</code>.</span>
+							<span class="what">Resources, bindings, stages and secrets. Exports <code>WebsiteEnv</code>.</span>
 							<span class="tool">infra → types</span>
 						</div>
 						<div class="gate">
 							<span class="when infra">app.d.ts</span>
-							<span class="what"><code>App.Platform.env = WebsiteEnv</code>: every route sees typed bindings</span>
+							<span class="what">Sets <code>App.Platform.env</code> to <code>WebsiteEnv</code> so routes get typed bindings</span>
 							<span class="tool">types → app</span>
 						</div>
 						<div class="gate">
 							<span class="when data">*.schema.ts</span>
-							<span class="what">Drizzle tables → <code>drizzle-kit generate</code> → <code>migrations/</code>, applied by Alchemy on dev and deploy</span>
+							<span class="what">Drizzle tables. <code>drizzle-kit generate</code> writes <code>migrations/</code>, which Alchemy applies on dev and deploy.</span>
 							<span class="tool">tables → SQL</span>
 						</div>
 						<div class="gate">
 							<span class="when data">*.input.ts</span>
-							<span class="what">Effect Schema for every write, wrapped in <code>strict()</code> for remote functions</span>
+							<span class="what">Effect Schema for each write, wrapped in <code>strict()</code> for remote functions</span>
 							<span class="tool">schema → forms</span>
 						</div>
 						<div class="gate">
 							<span class="when ai">tools.ts</span>
-							<span class="what">Agent tools generated from the block registry, decoded strictly before they run</span>
+							<span class="what">Agent tools generated from the block registry and decoded before they run</span>
 							<span class="tool">schema → model</span>
 						</div>
 						<div class="gate">
 							<span class="when">Layers</span>
-							<span class="what">Bindings become services once: <code>workersAiEmbedder(env.AI)</code>, <code>vectorizeIndex(env.VECTORS)</code></span>
+							<span class="what">Turn bindings into services, e.g. <code>workersAiEmbedder(env.AI)</code></span>
 							<span class="tool">bindings → services</span>
 						</div>
 						<div class="gate">
 							<span class="when">workers/*.ts</span>
-							<span class="what">What SvelteKit's Worker can't do: queue consumers, crons, Durable Objects</span>
+							<span class="what">Queue consumers, crons and Durable Objects, which SvelteKit's Worker can't host</span>
 							<span class="tool">extra Workers</span>
 						</div>
 					</div>
 				</section>
 
 				<section>
-					<span class="kicker">03 · One request</span>
-					<h2>A form post, end to end</h2>
+					<span class="kicker">03 · Architecture</span>
+					<h2>A form submission</h2>
 					<div class="flow">
 						<div class="step"><b>Browser</b><span>Submits the form (works without JS)</span></div>
 						<span class="to">→</span>
-						<div class="step" style="border-color: var(--data)"><b class="data">strict(PostInput)</b><span>Decodes. On failure, issues go back to each field.</span></div>
+						<div class="step" style="border-color: var(--data)"><b class="data">strict(PostInput)</b><span>Decodes input; errors go back to each field</span></div>
 						<span class="to">→</span>
-						<div class="step"><b>Remote function</b><span>Checks the member and the role</span></div>
+						<div class="step"><b>Remote function</b><span>Checks the member's role</span></div>
 						<span class="to">→</span>
-						<div class="step"><b>Server module</b><span>Typed Drizzle query</span></div>
+						<div class="step"><b>Server module</b><span>Runs a typed Drizzle query</span></div>
 						<span class="to">→</span>
-						<div class="step" style="border-color: var(--infra)"><b class="infra">env.DB</b><span>D1, through the typed binding</span></div>
+						<div class="step" style="border-color: var(--infra)"><b class="infra">env.DB</b><span>D1 through the typed binding</span></div>
 					</div>
 					<pre style="margin-top: 1em"><code class="language-ts" data-trim><script type="text/template">
 export const writePost = form(strict(PostInput), async (input) => {
-  const { event, member } = staffRequest();                 // who, and are they allowed
-  const post = await savePost(requestDb(event), input, member); // Drizzle over event.platform.env.DB
+  const { event, member } = staffRequest();                 // requires a staff member
+  const post = await savePost(requestDb(event), input, member); // Drizzle query on platform.env.DB
   redirect(303, resolve('/(app)/news/[id]', { id: post.id }));
 });
 					</script></code></pre>
@@ -809,25 +801,25 @@ export const writePost = form(strict(PostInput), async (input) => {
 				<!-- ============================================================ -->
 				<section class="divider" data-background-color="#0f1216">
 					<span class="num">04</span>
-					<h2>Zero to deployed</h2>
-					<p>Setup for anyone who's never touched this stack</p>
+					<h2>Setup</h2>
+					<p>For people new to this stack</p>
 				</section>
 
 				<section>
-					<span class="kicker">04 · Before you start</span>
-					<h2>What you need</h2>
+					<span class="kicker">04 · Setup</span>
+					<h2>Requirements</h2>
 					<div class="grid three">
 						<div class="card infra">
-							<h4>A Cloudflare account</h4>
-							<p>Free. Add a domain to it later if you want a custom address.</p>
+							<h4>Cloudflare account</h4>
+							<p>The free plan is enough. You only need a domain if you want a custom address.</p>
 						</div>
 						<div class="card">
-							<h4>A terminal</h4>
-							<p>macOS, Linux, or Windows. The login steps need arrow keys, so a regular terminal, not an IDE panel.</p>
+							<h4>Terminal</h4>
+							<p>macOS, Linux or Windows. Use a standalone terminal for the login steps, since the account pickers need arrow keys.</p>
 						</div>
 						<div class="card ai">
-							<h4>A coding agent</h4>
-							<p>Claude Code, or whichever you use. It does the typing; you make the decisions.</p>
+							<h4>Coding agent</h4>
+							<p>Claude Code or similar</p>
 						</div>
 					</div>
 				</section>
@@ -842,7 +834,7 @@ curl -fsSL https://bun.sh/install | bash
 # Windows (PowerShell)
 powershell -c "irm bun.sh/install.ps1 | iex"
 
-# check it
+# check the install
 bun --version
 					</code></pre>
 					<p class="caption">bun runs TypeScript directly and replaces npm for installs and scripts.</p>
@@ -850,7 +842,7 @@ bun --version
 
 				<section>
 					<span class="kicker">04 · Step 2</span>
-					<h2>Install Wrangler, sign in to Cloudflare</h2>
+					<h2>Install Wrangler and log in</h2>
 					<div class="grid two">
 						<div>
 							<pre class="shell"><code class="language-bash" data-trim>
@@ -858,7 +850,7 @@ bun --version
 bun add -d wrangler@latest
 bunx wrangler login
 							</code></pre>
-							<p class="caption">Cloudflare's CLI. Here it's for looking around: live logs, querying D1.</p>
+							<p class="caption">Cloudflare's CLI. We use it for logs and D1 queries.</p>
 							<pre class="shell"><code class="language-bash" data-trim>
 bunx wrangler tail &lt;worker-name&gt;
 bunx wrangler d1 execute &lt;db-name&gt; --remote \
@@ -867,26 +859,26 @@ bunx wrangler d1 execute &lt;db-name&gt; --remote \
 						</div>
 						<div>
 							<pre class="shell"><code class="language-bash" data-trim>
-# Alchemy keeps its own sign-in
+# Alchemy has a separate login
 bun alchemy profile edit --add Cloudflare
 							</code></pre>
 							<p class="caption">
-								OAuth in the browser, saved to <code>~/.alchemy/profiles.json</code>. Alchemy does the
-								deploying, so no API tokens in env vars.
+								Opens an OAuth login in the browser and saves it to
+								<code>~/.alchemy/profiles.json</code>. Deploys don't need API tokens in environment
+								variables.
 							</p>
 						</div>
 					</div>
 					<aside class="notes">
-						Wrangler isn't required for Alchemy to deploy: Alchemy signs in on its own. But Wrangler
-						is still the quickest way to tail logs or run a query against the deployed database.
-						The Alchemy command needs the project's dependencies installed, so it can come after
-						the scaffold step.
+						Alchemy doesn't need Wrangler to deploy. Wrangler is still the easiest way to tail logs
+						or query the deployed database. The Alchemy login needs the project's dependencies
+						installed, so run it after scaffolding.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">04 · Step 3</span>
-					<h2>Let the agent scaffold it</h2>
+					<h2>Scaffold the project with an agent</h2>
 					<div class="prompt">
 						<p>
 							Help me build a SvelteKit app on Cloudflare with Alchemy v2, Effect 4, Drizzle on D1,
@@ -902,22 +894,22 @@ bun alchemy profile edit --add Cloudflare
 							<code>InferEnv</code>.
 						</p>
 						<p>
-							Effect 4 is new: read <code>node_modules/effect/AGENTS.md</code> before writing Effect
-							code. Add a <code>verify</code> script (types, lint, tests) and run it until it passes.
-							Confirm with me before every deploy. Don't ask me to export API tokens.
+							Effect 4 is new. Read <code>node_modules/effect/AGENTS.md</code> before writing Effect
+							code. Add a <code>verify</code> script that runs types, lint and tests, and run it until
+							it passes. Ask me before every deploy. Don't ask me to export API tokens.
 						</p>
 					</div>
-					<p class="caption">Adapted from the prompt on alchemy.run's home page.</p>
+					<p class="caption">Adapted from the prompt on alchemy.run.</p>
 					<aside class="notes">
-						The two important parts: point it at the docs (Alchemy v2 and Effect 4 are newer than
-						most models' training data), and give it a single command that tells it whether it's
-						done.
+						Two parts of this prompt matter most. It points the agent at the docs, since Alchemy v2
+						and Effect 4 are newer than most models' training data. It also gives the agent one
+						command that tells it when it's done.
 					</aside>
 				</section>
 
 				<section>
 					<span class="kicker">04 · Step 4</span>
-					<h2>Give it rails</h2>
+					<h2>Project scripts and CLAUDE.md</h2>
 					<div class="split">
 						<pre><code class="language-json" data-trim>
 {
@@ -935,9 +927,11 @@ bun alchemy profile edit --add Cloudflare
 }
 						</code></pre>
 						<div class="side">
-							<p><b>A <code>CLAUDE.md</code></b> <span class="muted">at the root: the stack, the layout, the conventions, and the commands.</span></p>
-							<p><b>One done-check</b> <span class="muted">(<code>bun run verify</code>) the agent runs after every change.</span></p>
-							<p><b>Plain <code>vite dev</code> won't work</b> <span class="muted">because it has no <code>platform.env</code>. Always <code>bun run dev</code>.</span></p>
+							<ul>
+								<li><code>CLAUDE.md</code> at the root describes the stack, layout, conventions and commands.</li>
+								<li>The agent runs <code>bun run verify</code> after each change.</li>
+								<li>Use <code>bun run dev</code>. Plain <code>vite dev</code> has no <code>platform.env</code>.</li>
+							</ul>
 						</div>
 					</div>
 				</section>
@@ -948,9 +942,9 @@ bun alchemy profile edit --add Cloudflare
 					<div class="grid two">
 						<pre class="shell"><code class="language-bash" data-trim>
 bun run dev                   # local D1, R2, email
-bun run plan --stage demo     # what would change
-bun run deploy --stage demo   # make it so
-bun run destroy --stage demo  # take it all down
+bun run plan --stage demo     # preview changes
+bun run deploy --stage demo   # apply them
+bun run destroy --stage demo  # delete the stage
 						</code></pre>
 						<div class="term">Plan: <span class="ok">3 to create</span>
 <span class="ok">+</span> DB       <span class="dim">(Cloudflare.D1.Database)</span>
@@ -963,18 +957,18 @@ Proceed?
 <span class="ok">✓</span> Website created
 { url: "<span class="hl">https://….workers.dev</span>" }</div>
 					</div>
-					<p class="caption">The first deploy asks to install Alchemy's state store in your account: say yes.</p>
+					<p class="caption">On the first deploy, Alchemy asks to install its state store in your account. Answer yes.</p>
 				</section>
 
 				<section>
-					<span class="kicker">04 · Gotchas</span>
-					<h2>Things that trip people up</h2>
+					<span class="kicker">04 · Setup</span>
+					<h2>Common problems</h2>
 					<ul class="small">
-						<li><b>Vectorize and Workers AI have no local emulation.</b> Dev uses real ones in your account (free-tier sized).</li>
-						<li><b>Each stage reads its own <code>.env.&lt;stage&gt;</code>.</b> Name every setting there, even empty ones, or it silently inherits dev's.</li>
-						<li><b>Resources are named after the stack.</b> Rename the project and you get new, empty resources.</li>
-						<li><b>Migrations are generated, never hand-edited.</b> Change the table, run <code>db:generate</code>, restart dev.</li>
-						<li><b>Run login and first deploy in a real terminal.</b> The pickers need arrow keys.</li>
+						<li>Vectorize and Workers AI have no local emulation, so dev uses real (free-tier) resources in your account.</li>
+						<li>Each stage reads <code>.env.&lt;stage&gt;</code>. List every setting there, even empty ones, or the stage picks up dev's value from <code>.env</code>.</li>
+						<li>Resource names come from the stack name. Renaming the project creates new, empty resources.</li>
+						<li>Don't edit migrations. Change the table, run <code>db:generate</code> and restart dev.</li>
+						<li>Run the login and the first deploy in a standalone terminal.</li>
 					</ul>
 				</section>
 
@@ -983,32 +977,32 @@ Proceed?
 				<!-- ============================================================ -->
 				<section class="divider" data-background-color="#0f1216">
 					<span class="num">05</span>
-					<h2>Live: an agent builds and ships it</h2>
-					<p>A small app, schema first, deployed at the end</p>
+					<h2>Live demo</h2>
+					<p>An agent builds and deploys a small app</p>
 				</section>
 
 				<section>
-					<span class="kicker">05 · The brief</span>
-					<h2>A feedback wall for this talk</h2>
+					<span class="kicker">05 · Demo</span>
+					<h2>Demo: a feedback wall</h2>
 					<div class="flow">
 						<div class="step"><b>You</b><span>Post one line of feedback</span></div>
 						<span class="to">→</span>
 						<div class="step" style="border-color: var(--data)"><b class="data">FeedbackInput</b><span>1–280 characters, trimmed</span></div>
 						<span class="to">→</span>
-						<div class="step" style="border-color: var(--ai)"><b class="ai">Workers AI</b><span>Sentiment, topic, a short summary</span></div>
+						<div class="step" style="border-color: var(--ai)"><b class="ai">Workers AI</b><span>Returns sentiment, topic and a summary</span></div>
 						<span class="to">→</span>
-						<div class="step" style="border-color: var(--data)"><b class="data">Classification</b><span>Decoded strictly, never trusted</span></div>
+						<div class="step" style="border-color: var(--data)"><b class="data">Classification</b><span>Decodes the response</span></div>
 						<span class="to">→</span>
-						<div class="step" style="border-color: var(--infra)"><b class="infra">D1</b><span>Saved; the wall groups by sentiment</span></div>
+						<div class="step" style="border-color: var(--infra)"><b class="infra">D1</b><span>Stores it; the page groups by sentiment</span></div>
 					</div>
 					<p class="small muted" style="margin-top: 1em">
-						Uses: one D1 database, Workers AI, one SvelteKit Worker. Every boundary has a schema.
+						Uses one D1 database, Workers AI and one SvelteKit Worker.
 					</p>
 				</section>
 
 				<section>
-					<span class="kicker">05 · Prompt 1</span>
-					<h2>Infrastructure</h2>
+					<span class="kicker">05 · Demo</span>
+					<h2>Prompt 1: infrastructure</h2>
 					<div class="prompt">
 						<p>
 							Using the setup prompt from before, create <code>feedback-wall</code>. In
@@ -1035,18 +1029,18 @@ export default Alchemy.Stack(
   })
 );
 					</script></code></pre>
-					<p class="caption">What should come back</p>
+					<p class="caption">Expected result</p>
 				</section>
 
 				<section>
-					<span class="kicker">05 · Prompt 2</span>
-					<h2>Schemas before code</h2>
+					<span class="kicker">05 · Demo</span>
+					<h2>Prompt 2: schemas</h2>
 					<div class="prompt">
 						<p>
-							Define <code>FeedbackInput</code> (text, trimmed, 1–280 characters, messages a person
-							can act on) and <code>Classification</code> (sentiment: positive, neutral or negative;
-							topic; summary) in Effect Schema, and a Drizzle <code>feedback</code> table to match.
-							Generate the migration. Still no UI.
+							Define <code>FeedbackInput</code> (text, trimmed, 1–280 characters, with messages a
+							person can act on) and <code>Classification</code> (sentiment: positive, neutral or
+							negative; topic; summary) in Effect Schema, and a Drizzle <code>feedback</code> table to
+							match. Generate the migration. Still no UI.
 						</p>
 					</div>
 					<pre style="font-size: 0.38em"><code class="language-ts" data-trim><script type="text/template">
@@ -1075,16 +1069,16 @@ export const feedback = sqliteTable('feedback', {
 });
 					</script></code></pre>
 					<aside class="notes">
-						Schema first is the whole trick. Once these exist, every later step is constrained by
-						them, and the agent's mistakes show up as type errors against them. Note the
-						Classification has no length limits: structured output supports plain types and
-						enums, so the descriptions do that job, and decoding checks the rest.
+						Writing the schemas first means every later step is checked against them, so the
+						agent's mistakes show up as type errors. Classification has no length limits because
+						structured output only supports plain types and enums. The field descriptions guide
+						the length, and decoding checks the rest.
 					</aside>
 				</section>
 
 				<section>
-					<span class="kicker">05 · The AI call</span>
-					<h2>The schema goes out, the answer is decoded</h2>
+					<span class="kicker">05 · Demo</span>
+					<h2>Calling Workers AI with a schema</h2>
 					<pre><code class="language-ts" data-trim data-line-numbers="|1|7-17|18-20"><script type="text/template">
 const json_schema = Schema.toJsonSchemaDocument(Classification, { onExcessProperty: 'error' }).schema;
 
@@ -1104,78 +1098,78 @@ export const classify = (ai: Ai, text: string) =>
       }),
     catch: (cause) => new ClassifyError({ message: String(cause) })
   }).pipe(
-    // Back from the model: decoded, never trusted
+    // Decode the model's reply with the same schema
     Effect.flatMap((output) => Schema.decodeUnknownEffect(Classification, STRICT)(output.response))
   );
 					</script></code></pre>
-					<p class="caption">Simplified. One <code>Classification</code> produces both the request's JSON Schema and the check on the reply.</p>
+					<p class="caption">Simplified. <code>Classification</code> defines both the JSON Schema sent with the request and the check on the response.</p>
 				</section>
 
 				<section>
-					<span class="kicker">05 · Prompt 3</span>
-					<h2>The page, then the loop</h2>
+					<span class="kicker">05 · Demo</span>
+					<h2>Prompt 3: page and form</h2>
 					<div class="prompt">
 						<p>
-							Add the page: a form posting through a remote function with
-							<code>strict(FeedbackInput)</code>, which classifies the text and saves it, and the wall
-							below it, grouped by sentiment, newest first. Then run <code>bun run verify</code> until
-							it passes, and tell me each error you fixed.
+							Add the page: a form that posts through a remote function with
+							<code>strict(FeedbackInput)</code>, classifies the text and saves it. Below the form,
+							show the wall grouped by sentiment, newest first. Then run <code>bun run verify</code>
+							until it passes and list the errors you fixed.
 						</p>
 					</div>
 					<pre><code class="language-ts" data-trim><script type="text/template">
 export const postFeedback = form(strict(FeedbackInput), async ({ text }) => {
   const { platform } = getRequestEvent();
-  const env = platform!.env;                                  // WebsiteEnv: DB and AI, typed
+  const env = platform!.env;                                  // typed as WebsiteEnv
   const classification = await Effect.runPromise(classify(env.AI, text));
   await getDb(env.DB).insert(feedback).values({ id: crypto.randomUUID(), text, ...classification });
 });
 					</script></code></pre>
-					<p class="caption">"Tell me each error you fixed" is how the audience sees the gates working.</p>
+					<p class="caption">Asking for the list of fixed errors lets the audience see the checks working.</p>
 				</section>
 
 				<section>
-					<span class="kicker">05 · Watch for</span>
-					<h2>The failures we want to see</h2>
+					<span class="kicker">05 · Demo</span>
+					<h2>Errors to look for</h2>
 					<div class="gates">
 						<div class="gate">
 							<span class="when">Types</span>
-							<span class="what">Wrong column or binding name, a <code>Classification</code> field the table doesn't have</span>
+							<span class="what">A wrong column or binding name, or a <code>Classification</code> field missing from the table</span>
 							<span class="tool">bun run check</span>
 						</div>
 						<div class="gate">
 							<span class="when">Decode</span>
-							<span class="what">The model answers <code>"mixed"</code> for sentiment: refused, not saved</span>
+							<span class="what">The model returns <code>"mixed"</code> as the sentiment, so it's rejected and not saved</span>
 							<span class="tool">Classification</span>
 						</div>
 						<div class="gate">
 							<span class="when">Form</span>
-							<span class="what">An empty post, or 600 characters: the message appears on the field</span>
+							<span class="what">An empty or 600-character post shows a message on the field</span>
 							<span class="tool">FeedbackInput</span>
 						</div>
 						<div class="gate">
 							<span class="when">Deploy</span>
-							<span class="what">The plan lists exactly one database and one Worker, nothing else</span>
+							<span class="what">The plan lists one database and one Worker</span>
 							<span class="tool">alchemy plan</span>
 						</div>
 					</div>
 					<aside class="notes">
-						If the agent gets everything right the first time, break something on purpose: rename
-						the binding in alchemy.run.ts and run check, or post an empty form.
+						If the agent gets it right the first time, break something on purpose: rename the
+						binding in alchemy.run.ts and run check, or submit an empty form.
 					</aside>
 				</section>
 
 				<section class="center">
-					<span class="kicker">05 · Ship it</span>
+					<span class="kicker">05 · Demo</span>
 					<h2>Deploy</h2>
 					<pre class="shell" style="width: 70%; margin: 0.6em auto 0"><code class="language-bash" data-trim>
 bun run plan --stage demo
 bun run deploy --stage demo
 					</code></pre>
-					<p style="margin-top: 1em">Then post your feedback at</p>
+					<p style="margin-top: 1em">Post feedback at</p>
 					<span class="url">https://….workers.dev</span>
 					<aside class="notes">
-						Paste the URL from the deploy output over the placeholder, or read it out. Backup if the
-						network fails: a copy deployed before the talk, at a URL you've written down.
+						Replace the placeholder with the URL from the deploy output. If the network fails, use
+						a copy deployed before the talk.
 					</aside>
 				</section>
 
@@ -1183,26 +1177,25 @@ bun run deploy --stage demo
 				<!-- Close                                                         -->
 				<!-- ============================================================ -->
 				<section>
-					<span class="kicker">Takeaways</span>
-					<h2>Three things</h2>
+					<h2>Summary</h2>
 					<div class="grid three">
 						<div class="card infra">
-							<h4>Declare infra in code</h4>
-							<p>Alchemy turns Cloudflare's bindings into types the app is checked against</p>
+							<h4>Infrastructure in code</h4>
+							<p>Alchemy turns Cloudflare bindings into types that the app is checked against.</p>
 						</div>
 						<div class="card data">
-							<h4>Define each boundary once</h4>
-							<p>Effect Schema and Drizzle generate both sides: forms, tables, migrations, tools</p>
+							<h4>One definition per boundary</h4>
+							<p>Effect Schema and Drizzle generate form validation, tables, migrations and agent tools.</p>
 						</div>
 						<div class="card ai">
-							<h4>Let failure be mechanical</h4>
-							<p>A rigid stack turns an agent's wrong guesses into exact errors it can fix itself</p>
+							<h4>Errors at build time</h4>
+							<p>Strict types and schemas turn an agent's mistakes into errors it can fix itself.</p>
 						</div>
 					</div>
 				</section>
 
 				<section class="center">
-					<h2>Thanks!</h2>
+					<h2>Thanks</h2>
 					<p class="small muted">Questions?</p>
 					<div class="grid three" style="margin-top: 1.2em; text-align: left">
 						<div class="card"><h4>Alchemy</h4><p>alchemy.run</p></div>
